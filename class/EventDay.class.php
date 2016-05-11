@@ -3,7 +3,7 @@
 /**
  * Created by Vladimir.
  * User: Vladimir
- * Date: 11.05.2016
+ * Date: 06.05.2016
  */
 
 Class EventDay
@@ -139,6 +139,22 @@ Class EventDay
     }
 
     /**
+     * @param $timezone Устанавливаем временную зону
+     */
+    protected function setTimeZonetoName($timezone)
+    {
+        date_default_timezone_set($timezone);
+    }
+
+    /**
+     * @return string Возвращаем текущую временную зону
+     */
+    protected function getTimeZone()
+    {
+        return timezone_name_get(date_timezone_get(date_create()));
+    }
+
+    /**
      * @return array Возвращаем массив со значениями текущей даты и времени
      */
     protected function getToday()
@@ -223,22 +239,22 @@ Class EventDay
         $day = $this->normalizationDay($today["wday"]);
 
         if ($days < $day){
-            return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->getDay($this->wdays[$this->nextBit($days, $day)], $time));
+            return $this->getDay($this->wdays[$this->nextBit($days, $day)], $time);
         }elseif ($days == $day){
             if ($time[0] > $today["hours"]) {
-                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->bringingTimeEvent($time));
+                return $this->bringingTimeEvent($time);
             }elseif (($time[0] == $today["hours"]) && ($time[1] >= $today["minutes"])){
-                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->bringingTimeEvent($time));
+                return $this->bringingTimeEvent($time);
             }else{
-                return "День ближайшего мероприятия::  " . date('d\.m\.Y H:i:s', $this->getWeek("+1 week", $time));
+                return $this->getWeek("+1 week", $time);
             }
         }elseif ($days > $day){
             if ($this->currentBit($days, $day, $time)){
-                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->bringingTimeEvent($time));
+                return $this->bringingTimeEvent($time);
             }elseif ($this->nextBit($days, $day) != 0) {
-                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->getDay($this->wdays[$this->nextBit($days, $day)], $time));
+                return $this->getDay($this->wdays[$this->nextBit($days, $day)], $time);
             }else {
-                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->getDay($this->wdays[$this->prevBit($days)], $time));
+                return $this->getDay($this->wdays[$this->prevBit($days)], $time);
             }
         }
 
@@ -254,10 +270,18 @@ Class EventDay
     public function getEventDay($days, $time, $timezone)
     {
         if (($this->validateDays($days)) && ($this->validateTime($time)) && ($this->validateTimezone($timezone))) {
+
+            // Сохраняем текущую временную зону
+            $nametz = $this->getTimeZone();
+
+            // Устанавливаем временную зону, в которой задавалось мероприятие и получаем дату ближайшего мероприятия
             $this->setTimeZone($timezone);
             $arr = $this->getTimeOfString($time);
+            $upcomingEvent = $this->getDays($days, $arr);
 
-            return $this->getDays($days, $arr);
+            // Устанавливаем текущую временную зону и возвращаем дату мероприятия
+            $this->setTimeZonetoName($nametz);
+            return "Дата ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $upcomingEvent);
         }
 
         return "An error in the input data request!";
