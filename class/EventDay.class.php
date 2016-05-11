@@ -3,7 +3,7 @@
 /**
  * Created by Vladimir.
  * User: Vladimir
- * Date: 06.05.2016
+ * Date: 11.05.2016
  */
 
 Class EventDay
@@ -264,23 +264,24 @@ Class EventDay
     /**
      * @param $days Дни, по которым проходят мероприятия
      * @param $time Время начала мероприятия
-     * @param $timezone Временная зона
+     * @param $timezoneAdmin Временная зона заданная администратором
+      * @param $timezoneUser Временная зона заданная пользователем
      * @return string Ближайший день начала мероприятия или сообщение об ошибке, если входные данные некорректны
      */
-    public function getEventDay($days, $time, $timezone)
+    public function getEventDay($days, $time, $timezoneAdmin, $timezoneUser)
     {
-        if (($this->validateDays($days)) && ($this->validateTime($time)) && ($this->validateTimezone($timezone))) {
+        if (($this->validateDays($days)) && ($this->validateTime($time)) && ($this->validateTimezone($timezoneAdmin)) && ($this->validateTimezone($timezoneUser))) {
 
             // Сохраняем текущую временную зону
             $nametz = $this->getTimeZone();
 
             // Устанавливаем временную зону, в которой задавалось мероприятие и получаем дату ближайшего мероприятия
-            $this->setTimeZone($timezone);
+            $this->setTimeZone($timezoneAdmin);
             $arr = $this->getTimeOfString($time);
             $upcomingEvent = $this->getDays($days, $arr);
 
             // Устанавливаем текущую временную зону и возвращаем дату мероприятия
-            $this->setTimeZonetoName($nametz);
+            $this->setTimeZone($timezoneUser);
             return "Дата ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $upcomingEvent);
         }
 
