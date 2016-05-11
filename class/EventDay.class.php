@@ -3,7 +3,7 @@
 /**
  * Created by Vladimir.
  * User: Vladimir
- * Date: 06.05.2016
+ * Date: 11.05.2016
  */
 
 Class EventDay
@@ -14,13 +14,13 @@ Class EventDay
     private $maxBit = 64;
 
     private $wdays = [
-        64 => 'Понедельник',
-        32 => 'Вторник',
-        16 => 'Среда',
-        8 => 'Четверг',
-        4 => 'Пятница',
-        2 => 'Суббота',
-        1 => 'Воскресенье',
+        64 => 'Monday',
+        32 => 'Tuesday',
+        16 => 'Wednesday',
+        8 => 'Thursday',
+        4 => 'Friday',
+        2 => 'Saturday',
+        1 => 'Sunday',
     ];
 
     /**
@@ -59,7 +59,7 @@ Class EventDay
         $arr = $this->getTimeOfString($time);
         if ($arr)
             if (is_numeric($arr[0]) && is_numeric($arr[1]))
-                if (($arr[0] > 0 && $arr[0] < 24) && ($arr[1] > 0 && $arr[1] < 60))
+                if (($arr[0] >= 0 && $arr[0] < 24) && ($arr[1] >= 0 && $arr[1] < 60))
                     return true;
 
         return false;
@@ -103,6 +103,25 @@ Class EventDay
     }
 
     /**
+     * @param $number Дни по которым проходит мероприятие
+     * @param $bit Текущий день (нормализированный формат)
+     * @param $time - Время начала мероприятия
+     * @return bool True - сегодня проходит мероприятия, в противном случае - нет
+     */
+    private function currentBit($number, $bit, $time)
+    {
+        $today = $this->getToday();
+
+        if ($number & $bit)
+            if ($time[0] > $today["hours"]) {
+                return true;
+            }elseif (($time[0] == $today["hours"]) && ($time[1] >= $today["minutes"])) {
+                return true;
+            }
+        return false;
+    }
+
+    /**
      * @param $time Выделение в строке часов и минут
      * @return array Массив: $arr[0] - часы, $arr[1] - минуты
      */
@@ -125,6 +144,40 @@ Class EventDay
     protected function getToday()
     {
         return getdate();
+    }
+
+    /**
+     * @param $time Время начала мероприятия
+     * @return int
+     */
+    protected function bringingTimeEvent($time)
+    {
+        $date = date_create();
+        date_time_set($date, $time[0], $time[1]);
+
+        return date_timestamp_get($date);
+    }
+
+    /**
+     * @param $Day Следующая дата начала мероприятия
+     * @param $time Время начала мероприятия
+     * @return int
+     */
+    protected function getWeek($Day, $time)
+    {
+        //return strtotime($Day. " " . $time[0] . " hours" . $time[1] . " minutes");
+
+        return strtotime($Day, $this->bringingTimeEvent($time));
+    }
+
+    /**
+     * @param $Day Следующая дата начала мероприятия
+     * @param $time Время начала мероприятия
+     * @return int
+     */
+    protected function getDay($Day, $time)
+    {
+        return strtotime($Day. " " . $time[0] . " hours" . $time[1] . " minutes");
     }
 
     /**
@@ -170,20 +223,22 @@ Class EventDay
         $day = $this->normalizationDay($today["wday"]);
 
         if ($days < $day){
-            return "День ближайшего мероприятия: " . $this->wdays[$this->nextBit($days, $day)];
+            return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->getDay($this->wdays[$this->nextBit($days, $day)], $time));
         }elseif ($days == $day){
             if ($time[0] > $today["hours"]) {
-                return "День ближайшего мероприятия: " . $this->wdays[$days];
+                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->bringingTimeEvent($time));
             }elseif (($time[0] == $today["hours"]) && ($time[1] >= $today["minutes"])){
-                return "День ближайшего мероприятия: " . $this->wdays[$days];
+                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->bringingTimeEvent($time));
             }else{
-                return "День ближайшего мероприятие на следующей неделе:  " . $this->wdays[$days];
+                return "День ближайшего мероприятия::  " . date('d\.m\.Y H:i:s', $this->getWeek("+1 week", $time));
             }
         }elseif ($days > $day){
-            if ($this->nextBit($days, $day) != 0) {
-                return "День ближайшего мероприятия: " . $this->wdays[$this->nextBit($days, $day)];
+            if ($this->currentBit($days, $day, $time)){
+                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->bringingTimeEvent($time));
+            }elseif ($this->nextBit($days, $day) != 0) {
+                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->getDay($this->wdays[$this->nextBit($days, $day)], $time));
             }else {
-                return "День ближайшего мероприятия на следующей неделе: " . $this->wdays[$this->prevBit($days)];
+                return "День ближайшего мероприятия: " . date('d\.m\.Y H:i:s', $this->getDay($this->wdays[$this->prevBit($days)], $time));
             }
         }
 

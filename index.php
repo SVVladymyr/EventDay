@@ -1,7 +1,7 @@
 <?php
 /**
  * Author: Vladimir
- * Date: 06.05.2016
+ * Date: 11.05.2016
  */
 
 include_once "class\EventDay.class.php";
